@@ -6,12 +6,12 @@ time_interval: 100
 max_traj_size: 15
 viewport_width: 1280
 viewport_height: 720
-chosen_cam_idx: -1
+chosen_cam_idx: 0
 
-enable_ft: true
-enable_pcd: false
+enable_ft: false
+enable_pcd: true
 enable_model: true
-enable_traj: true
+enable_traj: false
 
 # point cloud generation and display
 downsample_voxel_size_m: 0.005

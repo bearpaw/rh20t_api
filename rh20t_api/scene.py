@@ -109,7 +109,9 @@ class RH20TScene:
         self._calib_path = os.path.join(self._parent_folder, "calib", str(calib_timestamp))
         self._intrinsics = load_dict_npy(os.path.join(self._calib_path, "intrinsics.npy"))
         self._extrinsics = load_dict_npy(os.path.join(self._calib_path, "extrinsics.npy"))
-        for _k in self._extrinsics: self._extrinsics[_k] = self._extrinsics[_k][0]
+        for _k in self._extrinsics:
+            if self._extrinsics[_k] is not None:
+                self._extrinsics[_k] = self._extrinsics[_k][0]
 
     def _load_high_freq_data_raw(self): self._high_freq_data_raw = np.load(os.path.join(self._folder, "high_freq_data", "force_torque_tcp_joint_timestamp.npy"))
     def _load_tactile_data(self): self._tactile_data = np.load(os.path.join(self._folder, "high_freq_data", "tactile.npy"))
@@ -274,7 +276,9 @@ class RH20TScene:
         extrinsics_marker = self.extrinsics
         extrinsics = {}
         base_world_mat = np.linalg.inv(extrinsics_marker[self.in_hand_serials[0]]) @ self._conf.tcp_camera_mat @ np.linalg.inv(pose_array_quat_2_matrix(self.calib_tcp))
-        for k in extrinsics_marker: extrinsics[k] = extrinsics_marker[k] @ base_world_mat @ self._conf.align_mat_base
+        for k in extrinsics_marker: 
+            if extrinsics_marker[k] is not None:
+                extrinsics[k] = extrinsics_marker[k] @ base_world_mat @ self._conf.align_mat_base
         return extrinsics
         
     ############################## properties ##############################

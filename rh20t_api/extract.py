@@ -67,6 +67,8 @@ def convert_dir(color_file, timestamps_file, dest_dir, depth_file = None, size =
     - size: the size of the depth map ( (640, 360) for resized version ).
     """
     with_depth = (depth_file is not None)
+    if not os.path.exists(color_file):
+        return
     assert os.path.exists(color_file)
     assert os.path.exists(timestamps_file)
     if with_depth: 

@@ -341,7 +341,11 @@ def visualize(scene_path:str, pcd_folder:str, vis_cfg:dict, logger:Logger):
     try:
         with alive_bar(end_timestamp + 1 - start_timestamp, manual=True, title='3D scene') as bar:
             while _t < end_timestamp + 1:
-                img_path = dataloader.get_image_path_pairs(_t, image_types=["color"])[single_view_cam.serial][0]
+                image_path_pairs = dataloader.get_image_path_pairs(_t, image_types=["color"])
+                
+                if len(image_path_pairs[single_view_cam.serial]) == 0:
+                    continue
+                img_path = image_path_pairs[single_view_cam.serial][0]
                 single_view_cam.update_img(img_path)
                 if keyboard_listener.esc:
                     logger.info('Pressed esc, exitting...')
@@ -370,19 +374,21 @@ def visualize(scene_path:str, pcd_folder:str, vis_cfg:dict, logger:Logger):
                     renderer_update(visualizer)
 
                 # tcp
-                tcp_aligned = dataloader.get_tcp_aligned(_t)
-                if ft_start is not None: prev_coord = ft_start.copy()
-                force_torque_preprocessed = dataloader.get_ft_aligned(_t)
-                ft_start, f_end, t_end, _, _ = force_torque_split(tcp_aligned, force_torque_preprocessed)
                 if enable_ft:
+                    tcp_aligned = dataloader.get_tcp_aligned(_t)
+                    if ft_start is not None: prev_coord = ft_start.copy()
+                    force_torque_preprocessed = dataloader.get_ft_aligned(_t)
+                    ft_start, f_end, t_end, _, _ = force_torque_split(tcp_aligned, force_torque_preprocessed)
                     # visualize force and torque with arrows
                     ft_arrow.update(ft_start, f_end, t_end)
                     for mesh_arrow in ft_arrow.geometries:
                         if first_time: visualizer.add_geometry(mesh_arrow, reset_bounding_box=False)
                         else: visualizer.update_geometry(mesh_arrow)
                     renderer_update(visualizer)
+
                 # trajectory
                 if enable_traj and not first_time:
+                    assert enable_ft is True, "enable_traj requires enable_ft is True"
                     traj_mesh = create_traj_mesh(prev_coord, ft_start)
                     visualizer.add_geometry(traj_mesh, reset_bounding_box=False)
                     traj_queue.put(traj_mesh)
@@ -400,7 +406,7 @@ def visualize(scene_path:str, pcd_folder:str, vis_cfg:dict, logger:Logger):
                     pcd = pcd.crop(bounding_box)
                     visualizer.add_geometry(pcd, reset_bounding_box=first_time)
                     renderer_update(visualizer)
-    
+
                 if first_time: first_time = False
                 else:
                     _vis_time += stopwatch.split
@@ -408,7 +414,7 @@ def visualize(scene_path:str, pcd_folder:str, vis_cfg:dict, logger:Logger):
                 _t += vis_cfg['time_interval']
                 bar((_t - start_timestamp) / (end_timestamp + 1 - start_timestamp))
 
-        if not keyboard_listener.esc: from IPython.terminal import embed; ipshell=embed.InteractiveShellEmbed(config=embed.load_default_config())(local_ns=locals())        
+            if not keyboard_listener.esc: from IPython.terminal import embed; ipshell=embed.InteractiveShellEmbed(config=embed.load_default_config())(local_ns=locals())        
 
     except Exception as e:
         logger.error(e)
